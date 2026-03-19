@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Title -->
+    <title>GenAI - AI Content Writing & Copywriting HTML5 Landing Page Template</title>
+
+    <!-- SEO meta tags -->
+    <meta name="description" content="Author: Marvel Theme, AI content writing and copywriting html5 and Bootstrap 5 landing page template" />
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/plugins.css" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+
+<body>
+    <div class="wrapper d-flex flex-column justify-between">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg fixed-top bg-dark" data-bs-theme="dark">
+            <div class="container">
+                <!-- Logo -->
+                <a class="navbar-brand" href="index.html">
+                    <img src="assets/images/logo.svg" alt="" width="165" />
+                </a>
+
+                <!-- Navbar toggler button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <div class="navbar-toggler-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </button>
+
+                <!-- Navbar content -->
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <div class="navbar-content-inner ms-lg-auto d-flex flex-column flex-lg-row align-lg-center gap-4 gap-lg-10 p-2 p-lg-0">
+                        <ul class="navbar-nav gap-lg-2 gap-xl-5">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle " href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Home
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="index.html">Home one</a></li>
+                                    <li><a class="dropdown-item" href="index-lite.html">Home one lite</a></li>
+                                    <li><a class="dropdown-item" href="index-2.html">Home two</a></li>
+                                    <li><a class="dropdown-item" href="index-2-lite.html">Home two lite</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Pages
+                                </a>
+                                <ul class="dropdown-menu megamenu megamenu-cols-2">
+                                    <li><a class="dropdown-item " href="about.html">About</a></li>
+                                    <li><a class="dropdown-item " href="about-lite.html">About lite</a></li>
+                                    <li><a class="dropdown-item " href="contact.html">Contact</a></li>
+                                    <li><a class="dropdown-item " href="contact-lite.html">Contact lite</a></li>
+                                    <li><a class="dropdown-item " href="blog.html">Blog</a></li>
+                                    <li><a class="dropdown-item " href="blog-lite.html">Blog lite</a></li>
+                                    <li><a class="dropdown-item " href="article.html">Article</a></li>
+                                    <li><a class="dropdown-item " href="article-lite.html">Article lite</a></li>
+                                    <li><a class="dropdown-item " href="use-cases.html">Use cases</a></li>
+                                    <li><a class="dropdown-item " href="use-cases-lite.html">Use cases lite</a></li>
+                                    <li><a class="dropdown-item " href="use-cases-details.html">Case details</a></li>
+                                    <li><a class="dropdown-item " href="use-cases-details-lite.html">Case details lite</a></li>
+                                    <li><a class="dropdown-item " href="pricing-plan.html">Pricing</a></li>
+                                    <li><a class="dropdown-item " href="pricing-plan-lite.html">Pricing lite</a></li>
+                                    <li><a class="dropdown-item" href="login.html">Login</a></li>
+                                    <li><a class="dropdown-item" href="login-lite.html">Login lite</a></li>
+                                    <li><a class="dropdown-item" href="register.html">Register</a></li>
+                                    <li><a class="dropdown-item" href="register-lite.html">Register lite</a></li>
+                                    <li><a class="dropdown-item" href="forgot-password.html">Forgot password</a></li>
+                                    <li><a class="dropdown-item" href="forgot-password-lite.html">Forgot password lite</a></li>
+                                    <li><a class="dropdown-item active" href="404.html">404</a></li>
+                                    <li><a class="dropdown-item " href="404-lite.html">404 lite</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="use-cases.html">Use cases</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="pricing-plan.html">Pricing</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="contact.html">Contact</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="login.html">Login</a>
+                            </li>
+                        </ul>
+                        <div class="">
+                            <a href="login.html" class="btn btn-outline-primary-dark">Get started</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+
+        <main class="flex-grow-1">
+            <section class="py-10 py-lg-15">
+                <div class="container">
+                    <div class="row justify-center">
+                        <div class="col-lg-6">
+                            <div class="text-center">
+                                <img src="assets/images/illustrations/error-yellow.svg" alt="" class="img-fluid mb-10" />
+                                <h2 class="text-white mb-4">Oops! Page Not Found.</h2>
+                                <p class="mb-8">
+                                    The page you are looking for is not available or has been moved. Try a different
+                                    page or go to homepage with the button below.
+                                </p>
+                                <a href="index.html" class="btn btn-primary-dark">Go to home</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer bg-striped pt-10 pt-lg-15">
+            <div class="container">
+                <div class="row g-10">
+                    <div class="col-lg-9 col-xl-8 order-lg-2">
+                        <div class="row g-6">
+                            <div class="col-md-4 col-lg-4 newwarp">
+                                <div class="footer-widget text-center text-md-start">
+                                    <h6 class="text-white mb-2">Gen AI</h6>
+                                    <ul class="link-list list-unstyled mb-0">
+                                        <li>
+                                            <a href="about.html">About</a>
+                                        </li>
+                                        <li>
+                                            <a href="blog.html">Blog</a>
+                                        </li>
+                                        <li>
+                                            <a href="login.html">Sign in</a>
+                                        </li>
+                                        <li>
+                                            <a href="register.html">Register</a>
+                                        </li>
+                                        <li>
+                                            <a href="contact.html">Contact</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-4 newwarp">
+                                <div class="footer-widget text-center text-md-start">
+                                    <h6 class="text-white mb-2">Use Cases</h6>
+                                    <ul class="link-list list-unstyled mb-0">
+                                        <li>
+                                            <a href="use-cases-details.html">AI writer</a>
+                                        </li>
+                                        <li>
+                                            <a href="use-cases-details.html">Businesses AI</a>
+                                        </li>
+                                        <li>
+                                            <a href="use-cases-details.html">AI Blog writer</a>
+                                        </li>
+                                        <li>
+                                            <a href="use-cases-details.html">AI Content Creator</a>
+                                        </li>
+                                        <li>
+                                            <a href="use-cases-details.html">Article write</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-lg-4">
+                                <div class="footer-widget text-center text-md-start">
+                                    <h6 class="text-white mb-4">News & Update</h6>
+                                    <form action="#">
+                                        <div class="input-group">
+                                            <input type="email" class="form-control" placeholder="Enter your email" />
+                                            <a href="news.html">
+                                            <button class="btn btn-primary-dark px-4" type="button">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="24" height="24">
+                                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m4.031 8.917 15.477-4.334a.5.5 0 0 1 .616.617l-4.333 15.476a.5.5 0 0 1-.94.067l-3.248-7.382a.5.5 0 0 0-.256-.257L3.965 9.856a.5.5 0 0 1 .066-.94v0Z" />
+                                                </svg>
+                                            </button>
+                                        </a>
+                                        </div>
+                                    </form>
+                                    <ul  class="list-unstyled d-flex flex-wrap align-center justify-center justify-md-start gap-3 social-list mb-0 mt-5">
+                                        <li>
+                                            <a @click="openHrefTG" style="cursor:pointer">
+                                                <svg data-v-7b01d8bb="" stroke-width="0" viewBox="0 0 24 24" height="32"
+                                                    width="32" xmlns="http://www.w3.org/2000/svg">
+                                                    <path data-v-7b01d8bb="" fill-opacity=".7" fill="white"
+                                                        fill-rule="evenodd"
+                                                        d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12zM12.43 8.859c-1.167.485-3.5 1.49-6.998 3.014-.568.226-.866.447-.893.663-.046.366.412.51 1.034.705.085.027.173.054.263.084.613.199 1.437.432 1.865.441.389.008.823-.152 1.302-.48 3.268-2.207 4.955-3.322 5.061-3.346.075-.017.179-.038.249.024s.063.18.056.212c-.046.193-1.84 1.862-2.77 2.726-.29.269-.495.46-.537.504-.094.097-.19.19-.282.279-.57.548-.996.96.024 1.632.49.323.882.59 1.273.856.427.291.853.581 1.405.943.14.092.274.187.405.28.497.355.944.673 1.496.623.32-.03.652-.331.82-1.23.397-2.126 1.179-6.73 1.36-8.628a2.111 2.111 0 00-.02-.472.506.506 0 00-.172-.325c-.143-.117-.365-.142-.465-.14-.451.008-1.143.249-4.476 1.635z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a :href=twitter>
+                                                <svg data-v-7b01d8bb="" stroke-width="0" viewBox="0 0 24 24" height="32"
+                                                    width="32" xmlns="http://www.w3.org/2000/svg">
+                                                    <path data-v-7b01d8bb="" fill-opacity=".7" fill="white"
+                                                        fill-rule="evenodd"
+                                                        d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm5.974-13.911c0 4.065-3.096 8.755-8.755 8.755A8.73 8.73 0 014.5 17.46a6.169 6.169 0 004.558-1.273 3.083 3.083 0 01-2.874-2.138c.461.089.936.07 1.389-.053a3.076 3.076 0 01-2.47-3.018v-.038a3.08 3.08 0 001.395.384 3.08 3.08 0 01-.952-4.107 8.74 8.74 0 006.341 3.213 3.081 3.081 0 015.246-2.806 6.186 6.186 0 001.954-.746 3.094 3.094 0 01-1.353 1.701 6.068 6.068 0 001.766-.483 6.25 6.25 0 01-1.535 1.593c.006.132.009.267.009.399z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a :href=discord style="cursor:pointer">
+                                                <img style="width: 20px; height: 20px;"
+                                                    src="assets/images/brands/3.png" />
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a :href=gitHub>
+                                                <img style="width: 20px; height: 20px;"
+                                                src="assets/images/brands/5.png" />
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a :href=medium>
+                                                <svg data-v-7b01d8bb="" stroke-width="0" viewBox="0 0 24 24" height="32"
+                                                    width="32" xmlns="http://www.w3.org/2000/svg">
+                                                    <path data-v-7b01d8bb="" fill-opacity=".7" fill="white"
+                                                        fill-rule="evenodd"
+                                                        d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm.96-12.108c0 2.357-1.893 4.268-4.23 4.268-2.336 0-4.23-1.911-4.23-4.268 0-2.356 1.894-4.267 4.23-4.267 2.337 0 4.23 1.91 4.23 4.267zm4.642 0c0 2.219-.947 4.018-2.116 4.018-1.168 0-2.115-1.8-2.115-4.018s.947-4.017 2.115-4.017c1.169 0 2.116 1.798 2.116 4.017zm1.898 0c0 1.987-.333 3.6-.744 3.6-.41 0-.744-1.612-.744-3.6 0-1.987.333-3.599.744-3.599.41 0 .744 1.612.744 3.6z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a @click="openHrefDocs" style="cursor:pointer">
+                                                <svg data-v-7b01d8bb="" stroke-width="0" viewBox="0 0 24 24" height="32"
+                                                    width="32" xmlns="http://www.w3.org/2000/svg">
+                                                    <path data-v-7b01d8bb="" fill-opacity=".7" fill="white"
+                                                        fill-rule="evenodd"
+                                                        d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm-3.667-5.666h8A1.333 1.333 0 0017.667 17V9.667l-.002-.013V9.65a.068.068 0 01-.005-.02.65.65 0 00-.033-.171l-.006-.02a.656.656 0 00-.149-.24l-4-3.998a.658.658 0 00-.195-.134.284.284 0 00-.035-.028H13.214a.677.677 0 00-.173-.034.1.1 0 01-.019-.004h-.004A.07.07 0 0013 5H8.333C7.597 5 7 5.598 7 6.334V17c0 .736.597 1.333 1.333 1.333zM13 9.667V6.334l3.333 3.333H13z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 order-lg-1 me-auto">
+                        <div class="footer-widget text-center text-lg-start">
+                            <a href="">
+                                <img src="assets/images/logo.svg" alt="" class="img-fluid" width="135" />
+                            </a>
+                            <p class="fs-sm mb-0 mt-4">
+                                A Magical Tool to Optimize you content for the first know who you're targeting. Identify your
+                                target audience.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center py-6 mt-8">
+                    <p class="fs-sm mb-0">Copyright <span class="text-primary-dark">GenAI</span>. Design By Marvel_Theme</p>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+
+    <!-- JS -->
+    <script src="assets/js/plugins.js"></script>
+    <script src="assets/js/main.js"></script>
+
+</body>
+
+</html>

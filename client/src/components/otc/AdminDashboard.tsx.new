@@ -1,0 +1,692 @@
+import { useState } from "react";
+import { useLanguage } from "@/hooks/use-language";
+import { 
+  BarChart3, 
+  Clock, 
+  CreditCard,
+  User, 
+  Users, 
+  FileText,
+  Settings, 
+  LucideIcon, 
+  Package2, 
+  Receipt, 
+  RefreshCw, 
+  CircleDollarSign, 
+  ChevronRight,
+  ShoppingCart,
+  DollarSign,
+  UserCheck,
+  Building,
+  UserPlus,
+  Code,
+  Globe,
+  Languages,
+  Handshake,
+  Pencil,
+  Trash2,
+  Ban,
+  ChevronDown,
+  Router
+} from "lucide-react";
+import OtcLayout from "./OtcLayout";
+import { TeamSettlement } from "./TeamSettlement";
+import { LanguageSettings } from "./LanguageSettings";
+import { ChannelManagement } from "./ChannelManagement";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import AgentDialog, { Agent } from "./AgentDialog";
+import ConfirmDialog from "./ConfirmDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface SidebarItem {
+  icon: LucideIcon;
+  label: string;
+  href?: string;
+  submenu?: SidebarItem[];
+  active?: boolean;
+}
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 仪表盘卡片组件
+function DashboardCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  trend, 
+  trendUp, 
+  description,
+  currency = ""
+}: { 
+  title: string; 
+  value: string; 
+  icon: LucideIcon; 
+  trend: string; 
+  trendUp: boolean; 
+  description: string;
+  currency?: string;
+}) {
+  return (
+    <Card className="bg-white">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {currency && <span className="text-gray-500 mr-1">{currency}</span>}
+              {value}
+            </h3>
+          </div>
+          <div className="bg-gray-100 p-2 rounded-md">
+            <Icon className="h-5 w-5 text-gray-700" />
+          </div>
+        </div>
+        <div className="flex items-center mt-4">
+          <div className={`text-sm font-medium ${trendUp ? 'text-green-600' : 'text-red-600'} flex items-center`}>
+            {trendUp ? '↑' : '↓'} {trend}
+          </div>
+          <span className="text-xs text-gray-500 ml-2">{description}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// 币种类型
+type CurrencyType = "CNY" | "USD" | "MMK" | "INR";
+
+// 定义仪表盘数据结构
+interface DashboardData {
+  agents: string;
+  customers: string;
+  collection: string;
+  payment: string;
+  today: string;
+  activeAccounts: string;
+  realTime: string;
+  pending: string;
+}
+
+// 定义所有币种的仪表盘数据
+interface DashboardDataByCurrency {
+  CNY: DashboardData;
+  USD: DashboardData;
+  MMK: DashboardData;
+  INR: DashboardData;
+}
+
+// 平台管理员（Admin）的仪表盘
+export default function AdminDashboard({ user }: { user: User | null }) {
+  const [activeItem, setActiveItem] = useState("dashboard");
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [agentToDelete, setAgentToDelete] = useState<string | null>(null);
+  const [activeCurrency, setActiveCurrency] = useState<CurrencyType>("CNY");
+
+  // 管理员侧边栏菜单项 - 添加通道管理选项
+  const sidebarItems: SidebarItem[] = [
+    {
+      icon: BarChart3,
+      label: t('otc.dashboard.title'),
+      href: "#dashboard",
+      active: activeItem === "dashboard",
+    },
+    {
+      icon: Router,
+      label: t('otc.nav.channels', '通道管理'),
+      href: "#channels",
+      active: activeItem === "channels",
+    },
+    {
+      icon: Building,
+      label: t('otc.nav.agents'),
+      href: "#agents",
+      active: activeItem === "agents",
+    },
+    {
+      icon: CircleDollarSign,
+      label: t('otc.nav.agentSettlements'),
+      href: "#settlements",
+      active: activeItem === "settlements",
+    },
+    {
+      icon: Languages,
+      label: t('otc.nav.language'),
+      href: "#languages",
+      active: activeItem === "languages",
+    },
+  ];
+
+  // 示例供应商数据
+  const [agents, setAgents] = useState<Agent[]>([
+    {
+      id: "1",
+      name: "马业务1",
+      telegramId: "tg_马业务17",
+      status: "已禁用",
+      account: "acc_8476",
+      collectionFee: "3%",
+      payoutFee: "2%",
+      timeoutFee: "2%",
+      lastActive: "2025/5/12"
+    },
+    {
+      id: "2",
+      name: "龙助手1",
+      telegramId: "tg_龙助手1349",
+      status: "未接单",
+      account: "acc_3000",
+      collectionFee: "3%",
+      payoutFee: "2%",
+      timeoutFee: "1%",
+      lastActive: "2025/5/8"
+    },
+    {
+      id: "3",
+      name: "孙专员1",
+      telegramId: "tg_孙专员1286",
+      status: "接单中",
+      account: "acc_3446",
+      collectionFee: "3%",
+      payoutFee: "2%",
+      timeoutFee: "1%",
+      lastActive: "2025/5/6"
+    },
+    {
+      id: "4",
+      name: "黄助理1",
+      telegramId: "tg_黄助理1113",
+      status: "接单中",
+      account: "acc_2467",
+      collectionFee: "4%",
+      payoutFee: "3%",
+      timeoutFee: "1%",
+      lastActive: "2025/5/4"
+    },
+    {
+      id: "5",
+      name: "王专员1",
+      telegramId: "tg_王专员1615",
+      status: "已禁用",
+      account: "acc_4327",
+      collectionFee: "5%",
+      payoutFee: "3%",
+      timeoutFee: "1%",
+      lastActive: "2025/4/15"
+    }
+  ]);
+
+  // 不同币种的仪表盘数据
+  const dashboardData: DashboardDataByCurrency = {
+    "CNY": {
+      agents: "128",
+      customers: "568",
+      collection: "12,435,692",
+      payment: "324,850",
+      today: "856,432",
+      activeAccounts: "98",
+      realTime: "98.5%",
+      pending: "32"
+    },
+    "USD": {
+      agents: "45",
+      customers: "176",
+      collection: "1,832,550",
+      payment: "48,320",
+      today: "128,450",
+      activeAccounts: "32",
+      realTime: "97.2%",
+      pending: "14"
+    },
+    "MMK": {
+      agents: "36",
+      customers: "154",
+      collection: "245,320,500",
+      payment: "12,450,300",
+      today: "18,546,200",
+      activeAccounts: "28",
+      realTime: "96.8%",
+      pending: "8"
+    },
+    "INR": {
+      agents: "24",
+      customers: "98",
+      collection: "18,642,320",
+      payment: "548,620",
+      today: "985,420",
+      activeAccounts: "18",
+      realTime: "95.4%",
+      pending: "5"
+    }
+  };
+
+  // 处理添加供应商
+  const handleAddAgent = () => {
+    setIsAddDialogOpen(true);
+  };
+
+  // 处理编辑供应商
+  const handleEditAgent = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setIsEditDialogOpen(true);
+  };
+
+  // 处理保存供应商
+  const handleSaveAgent = (updatedAgent: Agent) => {
+    // 检查是新增还是编辑
+    if (isAddDialogOpen) {
+      setAgents([...agents, updatedAgent]);
+      toast({
+        title: "添加成功",
+        description: `供应商 ${updatedAgent.name} 已成功添加`,
+      });
+    } else {
+      setAgents(agents.map(agent => 
+        agent.id === updatedAgent.id ? updatedAgent : agent
+      ));
+      toast({
+        title: "更新成功",
+        description: `供应商 ${updatedAgent.name} 已成功更新`,
+      });
+    }
+  };
+
+  // 处理删除供应商（确认前）
+  const handleDeleteAgentConfirm = (id: string) => {
+    // 在打开确认对话框之前，保存要删除的供应商ID
+    setAgentToDelete(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  // 处理删除供应商（确认后）
+  const handleDeleteAgent = () => {
+    if (agentToDelete) {
+      // 获取被删除供应商的名称，用于提示
+      const deletedAgent = agents.find(agent => agent.id === agentToDelete);
+      
+      // 实际删除操作
+      setAgents(agents.filter(agent => agent.id !== agentToDelete));
+      
+      // 提示
+      toast({
+        title: "删除成功",
+        description: deletedAgent ? `供应商 ${deletedAgent.name} 已成功删除` : "供应商已成功删除",
+      });
+      
+      // 重置删除ID
+      setAgentToDelete(null);
+    }
+  };
+
+  // 处理禁用/启用供应商
+  const handleToggleAgentStatus = (id: string) => {
+    setAgents(agents.map(agent => {
+      if (agent.id === id) {
+        const newStatus = agent.status === "已禁用" ? "未接单" : "已禁用";
+        const statusText = newStatus === "已禁用" ? "禁用" : "启用";
+        
+        toast({
+          title: `${statusText}成功`,
+          description: `供应商 ${agent.name} 已${statusText}`,
+        });
+        
+        return {
+          ...agent,
+          status: newStatus
+        };
+      }
+      return agent;
+    }));
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "已禁用":
+        return (
+          <Badge variant="outline" className="bg-gray-200 text-gray-700 border-gray-300 flex items-center">
+            <span className="h-2 w-2 rounded-full bg-gray-500 mr-1.5"></span>
+            已禁用
+          </Badge>
+        );
+      case "未接单":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300 flex items-center">
+            <span className="h-2 w-2 rounded-full bg-yellow-500 mr-1.5"></span>
+            未接单
+          </Badge>
+        );
+      case "接单中":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 flex items-center">
+            <span className="h-2 w-2 rounded-full bg-blue-500 mr-1.5"></span>
+            接单中
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-300">
+            {status}
+          </Badge>
+        );
+    }
+  };
+
+  return (
+    <OtcLayout 
+      sidebarItems={sidebarItems} 
+      activeItem={activeItem} 
+      setActiveItem={setActiveItem}
+      user={user}
+      dashboardTitle={t('otc.layout.adminDashboard')}
+      role="admin"
+    >
+      {/* Dashboard Content - 平台总览使用白色卡片 */}
+      {activeItem === "dashboard" && (
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          {/* 币种选项卡 - 使用与供应商结算相同的样式 */}
+          <div className="mb-4">
+            <div className="mb-4 bg-blue-50 p-2 rounded-md overflow-x-auto whitespace-nowrap sm:whitespace-normal">
+              <Tabs value={activeCurrency} onValueChange={(value) => setActiveCurrency(value as CurrencyType)}>
+                <TabsList className="border-b border-blue-100 bg-transparent p-0 w-full">
+                  {Object.keys(dashboardData).map(currency => (
+                    <TabsTrigger
+                      key={currency}
+                      value={currency}
+                      className="rounded-none px-6 py-2 text-sm data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:font-medium data-[state=active]:shadow-none"
+                    >
+                      {currency}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* 仪表盘卡片 */}
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <DashboardCard
+              title={t('otc.nav.agents')}
+              value={dashboardData[activeCurrency].agents}
+              icon={Building}
+              trend="+12"
+              trendUp={true}
+              description={t('otc.dashboard.thisMonth')}
+              currency=""
+            />
+            <DashboardCard
+              title={t('otc.dashboard.totalCustomers')}
+              value={dashboardData[activeCurrency].customers}
+              icon={Users}
+              trend="+35"
+              trendUp={true}
+              description={t('otc.dashboard.thisMonth')}
+              currency=""
+            />
+            <DashboardCard
+              title={t('otc.dashboard.collection')}
+              value={dashboardData[activeCurrency].collection}
+              icon={DollarSign}
+              trend="+18.3%"
+              trendUp={true}
+              description={t('otc.dashboard.average')}
+              currency={activeCurrency}
+            />
+            <DashboardCard
+              title={t('otc.dashboard.payment')}
+              value={dashboardData[activeCurrency].payment}
+              icon={CircleDollarSign}
+              trend="+15.2%"
+              trendUp={true}
+              description={t('otc.dashboard.average')}
+              currency={activeCurrency}
+            />
+            <DashboardCard
+              title={t('otc.dashboard.today')}
+              value={dashboardData[activeCurrency].today}
+              icon={ShoppingCart}
+              trend="+5.6%"
+              trendUp={true}
+              description={t('otc.dashboard.yesterday')}
+              currency={activeCurrency}
+            />
+            <DashboardCard
+              title={t('otc.dashboard.activeAccounts')}
+              value={dashboardData[activeCurrency].activeAccounts}
+              icon={UserCheck}
+              trend="+8"
+              trendUp={true}
+              description={t('otc.dashboard.thisMonth')}
+              currency=""
+            />
+            <DashboardCard
+              title={t('otc.dashboard.realTimeOrders')}
+              value={dashboardData[activeCurrency].realTime}
+              icon={RefreshCw}
+              trend="+0.8%"
+              trendUp={true}
+              description={t('otc.dashboard.thisMonth')}
+              currency=""
+            />
+            <DashboardCard
+              title={t('otc.settlements.pending')}
+              value={dashboardData[activeCurrency].pending}
+              icon={Receipt}
+              trend="+8"
+              trendUp={false}
+              description={t('otc.dashboard.yesterday')}
+              currency=""
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* 通道管理内容 */}
+      {activeItem === "channels" && <ChannelManagement />}
+      
+      {/* 供应商管理内容 - 进一步优化移动端适配 */}
+      {activeItem === "agents" && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-0">{t('otc.nav.agents')}</h2>
+              <Button 
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50 flex items-center w-full sm:w-auto"
+                onClick={handleAddAgent}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {t('common.add')}
+              </Button>
+            </div>
+            
+            <p className="text-gray-600 mb-4 sm:mb-6">{t('agents.list')}</p>
+            
+            {/* 供应商列表 - 桌面端 */}
+            <div className="hidden md:block bg-white rounded-md overflow-hidden border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-left border-b border-gray-200">
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">ID</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.name')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.tgAccount')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.status')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.account')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('collectionFee')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('payoutFee')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.timeoutFee')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('agents.lastActive')}</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-600">{t('common.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {agents.map((agent) => (
+                      <tr key={agent.id} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.id}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.name}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.telegramId}</td>
+                        <td className="py-3 px-4 text-sm">{getStatusBadge(agent.status)}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.account}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.collectionFee}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.payoutFee}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.timeoutFee}</td>
+                        <td className="py-3 px-4 text-sm text-gray-900">{agent.lastActive}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <div className="flex space-x-3">
+                            <button 
+                              className="text-blue-600 hover:text-blue-800"
+                              onClick={() => handleEditAgent(agent)}
+                              aria-label={t('common.edit')}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className="text-red-600 hover:text-red-800"
+                              onClick={() => handleDeleteAgentConfirm(agent.id)}
+                              aria-label={t('common.delete')}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className="text-gray-600 hover:text-gray-800"
+                              onClick={() => handleToggleAgentStatus(agent.id)}
+                              aria-label={agent.status === "已禁用" ? t('common.enable') : t('common.disable')}
+                            >
+                              <Ban className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className="text-gray-600 hover:text-gray-800"
+                              aria-label={t('common.more')}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* 供应商列表 - 手机端卡片式布局 */}
+            <div className="md:hidden space-y-4">
+              {agents.map((agent) => (
+                <Card key={agent.id} className="bg-white shadow-sm hover:shadow transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-medium text-gray-900">{agent.name}</p>
+                        <p className="text-sm text-gray-500">{agent.telegramId}</p>
+                      </div>
+                      <div>{getStatusBadge(agent.status)}</div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-y-2 text-sm mb-4">
+                      <div className="text-gray-500">{t('agents.account')}:</div>
+                      <div className="text-gray-900">{agent.account}</div>
+                      
+                      <div className="text-gray-500">{t('collectionFee')}:</div>
+                      <div className="text-gray-900">{agent.collectionFee}</div>
+                      
+                      <div className="text-gray-500">{t('payoutFee')}:</div>
+                      <div className="text-gray-900">{agent.payoutFee}</div>
+                      
+                      <div className="text-gray-500">{t('agents.timeoutFee')}:</div>
+                      <div className="text-gray-900">{agent.timeoutFee}</div>
+                      
+                      <div className="text-gray-500">{t('agents.lastActive')}:</div>
+                      <div className="text-gray-900">{agent.lastActive}</div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 w-full bg-white border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center justify-center px-2"
+                        onClick={() => handleEditAgent(agent)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                        <span className="truncate text-xs">{t('common.edit')}</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 w-full bg-white border-red-300 text-red-700 hover:bg-red-50 flex items-center justify-center px-2"
+                        onClick={() => handleDeleteAgentConfirm(agent.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                        <span className="truncate text-xs">{t('common.delete')}</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 w-full bg-white border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center px-2"
+                        onClick={() => handleToggleAgentStatus(agent.id)}
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                        <span className="truncate text-xs">{agent.status === "1" ? t('common.disable') : t('common.enable')}</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 供应商结算内容 */}
+      {activeItem === "settlements" && <TeamSettlement />}
+      
+      {/* 语言配置内容 */}
+      {activeItem === "languages" && <LanguageSettings />}
+      
+      {/* 添加供应商对话框 */}
+      {isAddDialogOpen && (
+        <AgentDialog 
+          isOpen={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen} 
+          onSave={handleSaveAgent}
+          mode="add"
+        />
+      )}
+      
+      {/* 编辑供应商对话框 */}
+      {isEditDialogOpen && selectedAgent && (
+        <AgentDialog 
+          isOpen={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen} 
+          onSave={handleSaveAgent}
+          mode="edit"
+          initialData={selectedAgent}
+        />
+      )}
+      
+      {/* 删除确认对话框 */}
+      {isDeleteConfirmOpen && (
+        <ConfirmDialog
+          isOpen={isDeleteConfirmOpen}
+          onOpenChange={setIsDeleteConfirmOpen}
+          title={t('dialogs.deleteAgent.title')}
+          description={t('dialogs.deleteAgent.description')}
+          onConfirm={handleDeleteAgent}
+        />
+      )}
+    </OtcLayout>
+  );
+}

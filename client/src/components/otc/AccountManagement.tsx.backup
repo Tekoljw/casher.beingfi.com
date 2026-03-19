@@ -1,0 +1,589 @@
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Search, 
+  Eye, 
+  RotateCcw, 
+  Ban, 
+  Check,
+  X,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  Trash,
+  Play,
+  Pause
+} from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+interface Account {
+  id: string;
+  name: string;
+  agent: string;
+  agentId: string;
+  accountNumber: string;
+  bankName?: string;
+  currency: string;
+  type: string; // "payment" | "bank"
+  status: "active" | "suspended" | "risk_control" | "low_success_rate";
+  successRate?: number;
+  dailyCollection?: {
+    current: number;
+    total: number;
+  };
+  limits?: {
+    min: number;
+    max: number;
+  };
+}
+
+// 生成随机账户数据
+const generateRandomAccounts = (count: number): Account[] => {
+  const names = [
+    "陈艳", "陈明", "杨涛", "李勇", "杨洋", "赵明", "黄静", 
+    "刘娜", "周丽", "杨芳", "张婧", "张强", "刘媛", "星敏", "王博"
+  ];
+  // 创建50个团队数组
+  const agents = Array.from({ length: 50 }, (_, i) => `团队${String(i + 1).padStart(2, '0')}`);
+  const currencies = ["CNY", "MMK", "INR", "VND", "USDT"];
+  const bankNames = ["中国银行", "工商银行", "建设银行", "农业银行", "招商银行", "交通银行"];
+  const types = ["payment", "bank"];
+  const statuses = ["active", "suspended", "risk_control", "low_success_rate"] as const;
+  
+  return Array.from({ length: count }, (_, i) => {
+    const name = names[Math.floor(Math.random() * names.length)];
+    const agent = agents[Math.floor(Math.random() * agents.length)];
+    const currency = currencies[Math.floor(Math.random() * currencies.length)];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const successRate = Math.floor(Math.random() * 100); // 0-100%
+    const isActive = status === "active";
+    
+    return {
+      id: `${Math.floor(10000 + Math.random() * 90000)}`,
+      name,
+      agent,
+      agentId: agent.replace("团队", ""),
+      accountNumber: Math.floor(Math.pow(10, 15) + Math.random() * 9 * Math.pow(10, 15)).toString(),
+      bankName: type === "bank" ? bankNames[Math.floor(Math.random() * bankNames.length)] : undefined,
+      currency,
+      type,
+      status,
+      successRate,
+      dailyCollection: isActive ? {
+        current: Math.floor(Math.random() * 100000),
+        total: Math.floor(Math.random() * 200000) + 100000
+      } : undefined,
+      limits: isActive ? {
+        min: 1000,
+        max: 10000
+      } : undefined
+    };
+  });
+};
+
+export default function AccountManagement() {
+  const { t } = useLanguage();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("全部");
+  const [currencyFilter, setCurrencyFilter] = useState("CNY");
+  const [typeFilter, setTypeFilter] = useState("payment");
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [accountDetailsOpen, setAccountDetailsOpen] = useState(false);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
+  const [editAccountOpen, setEditAccountOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [suspendConfirmOpen, setSuspendConfirmOpen] = useState(false);
+  const [expandedAccounts, setExpandedAccounts] = useState<{[key: string]: boolean}>({});
+  
+  // 初始化随机数据
+  useEffect(() => {
+    setAccounts(generateRandomAccounts(16));
+  }, []);
+  
+  // 展开或折叠账户卡片
+  const toggleAccountExpand = (accountId: string) => {
+    setExpandedAccounts(prev => ({
+      ...prev,
+      [accountId]: !prev[accountId]
+    }));
+  };
+  
+  // 处理编辑账户
+  const handleEditAccount = (account: Account) => {
+    setEditAccount(account);
+    setEditAccountOpen(true);
+  };
+  
+  // 处理暂停/启用账户
+  const handleToggleSuspendAccount = (account: Account) => {
+    setSelectedAccount(account);
+    setSuspendConfirmOpen(true);
+  };
+  
+  // 确认暂停/启用账户
+  const confirmToggleSuspend = () => {
+    if (selectedAccount) {
+      const newStatus = selectedAccount.status === "suspended" ? "active" : "suspended";
+      const updatedAccounts = accounts.map(acc => 
+        acc.id === selectedAccount.id ? {...acc, status: newStatus as "active" | "suspended" | "risk_control" | "low_success_rate"} : acc
+      );
+      setAccounts(updatedAccounts);
+      setSuspendConfirmOpen(false);
+    }
+  };
+  
+  // 处理删除账户
+  const handleDeleteAccount = (account: Account) => {
+    setSelectedAccount(account);
+    setDeleteConfirmOpen(true);
+  };
+  
+  // 确认删除账户
+  const confirmDeleteAccount = () => {
+    if (selectedAccount) {
+      const updatedAccounts = accounts.filter(acc => acc.id !== selectedAccount.id);
+      setAccounts(updatedAccounts);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
+  // 筛选账户
+  const filteredAccounts = accounts.filter(account => {
+    // 搜索条件过滤
+    const matchesSearch = !searchTerm || 
+      account.accountNumber.includes(searchTerm) || 
+      account.name.includes(searchTerm) ||
+      (account.bankName && account.bankName.includes(searchTerm));
+      
+    // 团队过滤
+    const matchesAgent = activeTab === "全部" || account.agent === activeTab;
+    
+    // 币种过滤
+    const matchesCurrency = account.currency === currencyFilter;
+    
+    // 账户类型过滤
+    const matchesType = account.type === typeFilter;
+    
+    return matchesSearch && matchesAgent && matchesCurrency && matchesType;
+  });
+  
+  // 处理账户详情查看
+  const handleViewAccount = (account: Account) => {
+    setSelectedAccount(account);
+    setAccountDetailsOpen(true);
+  };
+
+  return (
+    <div className="p-6 bg-white min-h-[calc(100vh-64px)]">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-medium text-black">收款账户</h2>
+        
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-black" />
+            <Input 
+              placeholder="请输入银行或账号名称" 
+              className="pl-10 h-10 w-64 bg-gray-50 border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Button 
+            className="h-10 bg-blue-600 hover:bg-blue-700 text-black"
+            onClick={() => setAddAccountOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            添加账户
+          </Button>
+        </div>
+      </div>
+      
+      {/* 筛选选项卡 */}
+      <div className="bg-gray-50 rounded-lg p-2 mb-4">
+        {/* 团队筛选选项卡 */}
+        <div className="flex flex-wrap gap-0.5 mb-2">
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${activeTab === '全部' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setActiveTab('全部')}
+          >
+            全部
+          </button>
+          {Array.from({ length: 12 }, (_, i) => {
+            const agentName = `团队${String(i + 1).padStart(2, '0')}`;
+            return (
+              <button
+                key={agentName}
+                className={`px-3 py-1 rounded-md text-sm ${activeTab === agentName ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+                onClick={() => setActiveTab(agentName)}
+              >
+                {agentName}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 币种筛选选项卡 */}
+      <div className="bg-gray-50 rounded-lg p-2 mb-4">
+        <div className="flex gap-0.5">
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${currencyFilter === 'CNY' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setCurrencyFilter('CNY')}
+          >
+            CNY
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${currencyFilter === 'MMK' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setCurrencyFilter('MMK')}
+          >
+            MMK
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${currencyFilter === 'INR' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setCurrencyFilter('INR')}
+          >
+            INR
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${currencyFilter === 'VND' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setCurrencyFilter('VND')}
+          >
+            VND
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${currencyFilter === 'USDT' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setCurrencyFilter('USDT')}
+          >
+            USDT
+          </button>
+        </div>
+      </div>
+
+      {/* 账户类型选项卡 */}
+      <div className="bg-gray-50 rounded-lg p-2 mb-6">
+        <div className="flex gap-0.5">
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${typeFilter === 'payment' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setTypeFilter('payment')}
+          >
+            支付宝扫码账户
+          </button>
+          <button
+            className={`px-3 py-1 rounded-md text-sm ${typeFilter === 'bank' ? 'bg-white shadow-sm text-black' : 'text-black'}`}
+            onClick={() => setTypeFilter('bank')}
+          >
+            个人银行转账账户
+          </button>
+        </div>
+      </div>
+
+      {/* 账户状态说明 */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg text-sm text-black">
+        <p>账户卡片颜色含义：</p>
+        <ul className="flex flex-wrap gap-4 mt-2">
+          <li className="flex items-center">
+            <div className="w-4 h-4 rounded bg-green-100 mr-2"></div>
+            <span>绿色：正在收款</span>
+          </li>
+          <li className="flex items-center">
+            <div className="w-4 h-4 rounded bg-red-100 mr-2"></div>
+            <span>红色：触发风控</span>
+          </li>
+          <li className="flex items-center">
+            <div className="w-4 h-4 rounded bg-gray-100 mr-2"></div>
+            <span>灰色：暂停收款</span>
+          </li>
+          <li className="flex items-center">
+            <div className="w-4 h-4 rounded bg-yellow-100 mr-2"></div>
+            <span>黄色：成功率过低（最近50笔成功率小于15%）</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* 账户卡片网格 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {filteredAccounts.map(account => {
+          // 获取账户状态对应的样式
+          const getBgColor = () => {
+            switch(account.status) {
+              case "active":
+                return "bg-green-50";
+              case "risk_control":
+                return "bg-red-50";
+              case "suspended":
+                return "bg-gray-50";
+              case "low_success_rate":
+                return "bg-yellow-50";
+              default:
+                return "bg-green-50";
+            }
+          };
+          
+          const getTextColor = () => {
+            switch(account.status) {
+              case "active":
+                return "text-green-500";
+              case "risk_control":
+                return "text-red-500";
+              case "suspended":
+                return "text-gray-500";
+              case "low_success_rate":
+                return "text-yellow-500";
+              default:
+                return "text-green-500";
+            }
+          };
+          
+          const getBorderColor = () => {
+            switch(account.status) {
+              case "active":
+                return "border-green-200";
+              case "risk_control":
+                return "border-red-200";
+              case "suspended":
+                return "border-gray-200";
+              case "low_success_rate":
+                return "border-yellow-200";
+              default:
+                return "border-green-200";
+            }
+          };
+          
+          const bgColor = getBgColor();
+          const textColor = getTextColor();
+          const borderColor = getBorderColor();
+          const isExpanded = expandedAccounts[account.id] || false;
+          
+          return (
+            <div key={account.id} className={`${bgColor} rounded-lg p-4 relative shadow-sm`}>
+              <div className="flex flex-col items-center">
+                <div className={`${textColor} font-medium mb-1`}>{account.name} {account.agent && `(${account.agent})`}</div>
+                <div className="text-black text-sm font-mono">
+                  {account.accountNumber}
+                </div>
+              </div>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="absolute right-3 top-4 h-6 w-6 p-0 rounded-sm"
+                onClick={() => toggleAccountExpand(account.id)}
+              >
+                <ChevronDown className={`h-5 w-5 ${textColor} transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </Button>
+              
+              {/* 展开内容 */}
+              {isExpanded && (
+                <div className="mt-3">
+                  <div className="text-center mb-1">
+                    <div className={`text-xs ${textColor}`}>每日收款上下限</div>
+                    <div className={`text-sm ${textColor} font-medium`}>
+                      {account.dailyCollection?.current.toLocaleString() || '19,629'}/{account.dailyCollection?.total.toLocaleString() || '58,114'}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center mb-1">
+                    <div className="text-xs text-black">单笔最大/最小</div>
+                    <div className="text-sm text-black font-medium">
+                      {account.limits?.min.toLocaleString() || '1,000'}/{account.limits?.max.toLocaleString() || '10,000'}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center mb-4">
+                    <div className="text-xs text-blue-500">最近30笔成功率</div>
+                    <div className={`text-sm font-medium ${account.successRate && account.successRate < 15 ? 'text-red-500' : textColor}`}>
+                      {account.successRate || 66}%
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-8 w-8 p-0 bg-white border-black"
+                      onClick={() => handleEditAccount(account)}
+                    >
+                      <Edit className={`h-4 w-4 ${textColor}`} />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-8 w-8 p-0 bg-white border-black"
+                      onClick={() => handleDeleteAccount(account)}
+                    >
+                      <Trash className={`h-4 w-4 ${textColor}`} />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-8 w-8 p-0 bg-white border-black"
+                      onClick={() => handleToggleSuspendAccount(account)}
+                    >
+                      {account.status === "suspended" ? (
+                        <Play className={`h-4 w-4 ${textColor}`} />
+                      ) : (
+                        <Pause className={`h-4 w-4 ${textColor}`} />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* 查看账户详情对话框 */}
+      <Dialog open={accountDetailsOpen} onOpenChange={setAccountDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-black">账户详情</DialogTitle>
+          </DialogHeader>
+          {selectedAccount && (
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <div>
+                  <div className="text-black text-sm">账户持有人姓名</div>
+                  <div className="font-medium text-black">{selectedAccount.name}</div>
+                </div>
+                <div>
+                  <div className="text-black text-sm">账号</div>
+                  <div className="font-mono text-black">{selectedAccount.accountNumber}</div>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div>
+                  <div className="text-black text-sm">账户类型</div>
+                  <div className="font-medium text-black">
+                    {selectedAccount.type === "bank" ? "银行转账" : "扫码支付"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-black text-sm">币种</div>
+                  <div className="font-medium text-black">
+                    {selectedAccount.currency}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-black text-sm">负责团队</div>
+                <div className="font-medium text-black">
+                  {selectedAccount.agent} (ID: {selectedAccount.agentId})
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* 删除确认对话框 */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-black">确认删除</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 text-black">
+            确定要删除账户 <span className="font-medium">{selectedAccount?.name} ({selectedAccount?.accountNumber})</span> 吗？此操作无法撤销。
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              取消
+            </Button>
+            <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={confirmDeleteAccount}>
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 暂停/启用确认对话框 */}
+      <Dialog open={suspendConfirmOpen} onOpenChange={setSuspendConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-black">
+              {selectedAccount?.status === "suspended" ? "启用账户" : "暂停账户"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-3 text-black">
+            {selectedAccount?.status === "suspended" ? (
+              <>确定要启用账户 <span className="font-medium">{selectedAccount?.name}</span> 吗？</>
+            ) : (
+              <>确定要暂停账户 <span className="font-medium">{selectedAccount?.name}</span> 的收款吗？</>
+            )}
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSuspendConfirmOpen(false)}>
+              取消
+            </Button>
+            <Button 
+              className={selectedAccount?.status === "suspended" ? "bg-green-500 hover:bg-green-600 text-white" : "bg-yellow-500 hover:bg-yellow-600 text-white"}
+              onClick={confirmToggleSuspend}
+            >
+              {selectedAccount?.status === "suspended" ? "确认启用" : "确认暂停"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 添加账户对话框 */}
+      <Dialog open={addAccountOpen} onOpenChange={setAddAccountOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-black">添加新账户</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Form fields would go here */}
+            <div className="text-black">添加账户表单字段（待实现）</div>
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setAddAccountOpen(false)}>
+              取消
+            </Button>
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+              添加账户
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 编辑账户对话框 */}
+      <Dialog open={editAccountOpen} onOpenChange={setEditAccountOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-black">编辑账户</DialogTitle>
+          </DialogHeader>
+          {editAccount && (
+            <div className="space-y-4">
+              {/* Form fields with current values would go here */}
+              <div className="text-black">编辑账户表单字段（待实现）</div>
+              <div className="text-black">当前账户：{editAccount.name} ({editAccount.accountNumber})</div>
+            </div>
+          )}
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditAccountOpen(false)}>
+              取消
+            </Button>
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+              保存修改
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

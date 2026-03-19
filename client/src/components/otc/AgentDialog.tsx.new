@@ -1,0 +1,243 @@
+import React, { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
+
+// 供应商数据类型
+export interface Agent {
+  id: string;
+  name: string;
+  telegramId: string;
+  status: string;
+  account: string;
+  collectionFee: string;
+  payoutFee: string;
+  timeoutFee: string;
+  lastActive: string;
+}
+
+export interface AgentDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (agent: Agent) => void;
+  initialData?: Agent;  // 若提供，则为编辑模式；否则为添加模式
+  mode: "add" | "edit";
+}
+
+const EMPTY_AGENT: Agent = {
+  id: "",
+  name: "",
+  telegramId: "",
+  status: "未接单",
+  account: "",
+  collectionFee: "3%",
+  payoutFee: "2%",
+  timeoutFee: "1%",
+  lastActive: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'numeric', day: 'numeric' }).replace(/\//g, '/')
+};
+
+export default function AgentDialog({ isOpen, onOpenChange, onSave, initialData, mode }: AgentDialogProps) {
+  const [formData, setFormData] = useState<Agent>(initialData || EMPTY_AGENT);
+  const { toast } = useToast();
+  const { t } = useLanguage();
+  
+  // 获取标题
+  const title = mode === "add" ? t('agents.add', '添加供应商') : t('agents.edit', '编辑供应商');
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSubmit = () => {
+    // 表单验证
+    if (!formData.name.trim()) {
+      toast({
+        title: t('validation.error', '验证错误'),
+        description: t('validation.nameRequired', '请输入客户名称'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formData.telegramId.trim()) {
+      toast({
+        title: t('validation.error', '验证错误'),
+        description: t('validation.tgRequired', '请输入TG账号'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formData.account.trim()) {
+      toast({
+        title: t('validation.error', '验证错误'),
+        description: t('validation.accountRequired', '请输入账号'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // 生成新ID（如果是新建的话）
+    if (!formData.id) {
+      formData.id = Date.now().toString();
+    }
+    
+    onSave(formData);
+    onOpenChange(false);
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-black">{title}</DialogTitle>
+          <DialogDescription className="text-gray-600">
+            {t('agents.dialogDescription', '填写以下信息')}{mode === "edit" ? t('agents.modify', '修改') : t('agents.create', '创建')}{t('agents.accountSuffix', '供应商账户')}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-gray-700">{t('agents.name', '客户名称')}</Label>
+              <input 
+                id="name" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                placeholder={t('agents.namePlaceholder', '请输入名称')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-black"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="telegramId" className="text-gray-700">{t('agents.tgAccount', 'TG账号')}</Label>
+              <input 
+                id="telegramId" 
+                name="telegramId" 
+                value={formData.telegramId} 
+                onChange={handleInputChange} 
+                placeholder={t('agents.tgPlaceholder', '请输入TG账号')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-black"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="status" className="text-gray-700">{t('agents.status', '当前状态')}</Label>
+              <Select 
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger id="status" className="bg-white border-gray-300 text-gray-900">
+                  <SelectValue placeholder={t('agents.selectStatus', '选择状态')} />
+                </SelectTrigger>
+                <SelectContent className="bg-white text-gray-900">
+                  <SelectItem value="未接单" className="text-gray-900">{t('agents.status.noOrder', '未接单')}</SelectItem>
+                  <SelectItem value="接单中" className="text-gray-900">{t('agents.status.accepting', '接单中')}</SelectItem>
+                  <SelectItem value="已禁用" className="text-gray-900">{t('agents.status.disabled', '已禁用')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="account" className="text-gray-700">{t('agents.account', '账号')}</Label>
+              <input 
+                id="account" 
+                name="account" 
+                value={formData.account} 
+                onChange={handleInputChange} 
+                placeholder={t('agents.accountPlaceholder', '请输入账号')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-black"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="collectionFee" className="text-gray-700">{t('collectionFee', '收款手续费')}</Label>
+              <Select 
+                value={formData.collectionFee}
+                onValueChange={(value) => handleSelectChange("collectionFee", value)}
+              >
+                <SelectTrigger id="collectionFee" className="bg-white border-gray-300 text-gray-900">
+                  <SelectValue placeholder={t('collectionFee', '收款手续费')} />
+                </SelectTrigger>
+                <SelectContent className="bg-white text-gray-900">
+                  <SelectItem value="1%" className="text-gray-900">1%</SelectItem>
+                  <SelectItem value="2%" className="text-gray-900">2%</SelectItem>
+                  <SelectItem value="3%" className="text-gray-900">3%</SelectItem>
+                  <SelectItem value="4%" className="text-gray-900">4%</SelectItem>
+                  <SelectItem value="5%" className="text-gray-900">5%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="payoutFee" className="text-gray-700">{t('payoutFee', '代付手续费')}</Label>
+              <Select 
+                value={formData.payoutFee}
+                onValueChange={(value) => handleSelectChange("payoutFee", value)}
+              >
+                <SelectTrigger id="payoutFee" className="bg-white border-gray-300 text-gray-900">
+                  <SelectValue placeholder={t('payoutFee', '代付手续费')} />
+                </SelectTrigger>
+                <SelectContent className="bg-white text-gray-900">
+                  <SelectItem value="0.5%" className="text-gray-900">0.5%</SelectItem>
+                  <SelectItem value="1%" className="text-gray-900">1%</SelectItem>
+                  <SelectItem value="1.5%" className="text-gray-900">1.5%</SelectItem>
+                  <SelectItem value="2%" className="text-gray-900">2%</SelectItem>
+                  <SelectItem value="3%" className="text-gray-900">3%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="timeoutFee" className="text-gray-700">{t('agents.timeoutFee', '超时手续费')}</Label>
+              <Select 
+                value={formData.timeoutFee}
+                onValueChange={(value) => handleSelectChange("timeoutFee", value)}
+              >
+                <SelectTrigger id="timeoutFee" className="bg-white border-gray-300 text-gray-900">
+                  <SelectValue placeholder={t('agents.timeoutFee', '超时手续费')} />
+                </SelectTrigger>
+                <SelectContent className="bg-white text-gray-900">
+                  <SelectItem value="0.5%" className="text-gray-900">0.5%</SelectItem>
+                  <SelectItem value="1%" className="text-gray-900">1%</SelectItem>
+                  <SelectItem value="1.5%" className="text-gray-900">1.5%</SelectItem>
+                  <SelectItem value="2%" className="text-gray-900">2%</SelectItem>
+                  <SelectItem value="3%" className="text-gray-900">3%</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            variant="outline"
+            className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+            onClick={() => onOpenChange(false)}
+          >
+            {t('common.cancel', '取消')}
+          </Button>
+          <Button
+            className="bg-blue-600 text-white hover:bg-blue-700"
+            onClick={handleSubmit}
+          >
+            {t('common.save', '保存')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

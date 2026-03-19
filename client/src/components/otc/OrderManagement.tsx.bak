@@ -1,0 +1,689 @@
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Search, 
+  ArrowUp, 
+  ArrowDown, 
+  Clock, 
+  Eye, 
+  RotateCcw, 
+  Ban, 
+  Check,
+  CircleDollarSign,
+  CreditCard,
+  User,
+  Calendar,
+  Banknote,
+  X
+} from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface Order {
+  id: string;
+  amount: number;
+  currency: string;
+  type: string;
+  client: string;
+  uniqueCode: string;
+  agentFee: string;
+  businessAgent: string;
+  status: string;
+  date: string;
+  payment_method?: string;
+  description?: string;
+  phone?: string;
+}
+
+// 生成随机订单数据
+const generateRandomOrders = (count: number): Order[] => {
+  const currencies = ["CNY", "INR", "MMK", "VND"];
+  const types = ["addBalance", "withdraw"];
+  const statuses = ["待处理", "已完成", "已取消", "处理中"];
+  const paymentMethods = ["银行卡", "支付宝", "微信", "PayPal"];
+  const descriptions = ["充值订单", "提现申请", "转账", "OTC交易"];
+  
+  return Array.from({ length: count }, (_, i) => ({
+    id: `OTC${Math.floor(10000 + Math.random() * 90000)}`,
+    amount: Math.floor(1000 + Math.random() * 19000),
+    currency: currencies[Math.floor(Math.random() * currencies.length)],
+    type: types[Math.floor(Math.random() * types.length)],
+    client: `用户${Math.floor(1000 + Math.random() * 9000)}`,
+    uniqueCode: `ID${Math.floor(100000 + Math.random() * 900000)}`,
+    agentFee: `${Math.floor(Math.random() * 100)}`,
+    businessAgent: `团队${Math.floor(10 + Math.random() * 90)}`,
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    date: new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 7)).toLocaleString(),
+    payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+    description: descriptions[Math.floor(Math.random() * descriptions.length)],
+    phone: `1${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(10000000 + Math.random() * 90000000)}`,
+  }));
+};
+
+export default function OrderManagement() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currencyFilter, setCurrencyFilter] = useState("ALL");
+  const [searchType, setSearchType] = useState("otc");
+  const [receiveEnabled, setReceiveEnabled] = useState(true);
+  const [paymentEnabled, setPaymentEnabled] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // 初始化随机订单数据
+  useEffect(() => {
+    setOrders(generateRandomOrders(16));
+  }, []);
+  
+  // 筛选订单
+  const filteredOrders = orders.filter(order => {
+    // 搜索条件过滤
+    const matchesSearch = !searchTerm || 
+      (searchType === "otc" && order.id.includes(searchTerm)) ||
+      (searchType === "payment" && order.uniqueCode.includes(searchTerm)) ||
+      (searchType === "user" && order.client.includes(searchTerm));
+      
+    // 币种过滤
+    const matchesCurrency = currencyFilter === "ALL" || order.currency === currencyFilter;
+    
+    return matchesSearch && matchesCurrency;
+  });
+  
+  // 统计数据
+  const receivingOrdersCount = orders.filter(o => o.type === "addBalance" && o.status === "待处理").length;
+  const sendingOrdersCount = orders.filter(o => o.type === "withdraw" && o.status === "待处理").length;
+  const expiredOrdersCount = orders.filter(o => o.status === "已取消").length;
+  
+  // 处理刷新操作
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setOrders(generateRandomOrders(16));
+      setIsRefreshing(false);
+    }, 800);
+  };
+  
+  // 处理查看订单详情
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setDetailsOpen(true);
+  };
+
+  return (
+    <div className="p-6 bg-[#f5f7fa] min-h-[calc(100vh-64px)] rounded-lg">
+      <div className="mb-6 flex justify-between items-center rounded-lg bg-white p-4 shadow-sm">
+        <h2 className="text-[#1e2834] text-xl font-medium">收付订单</h2>
+        
+        <div className="flex space-x-2">
+          <div className="flex items-center gap-2 bg-white px-2 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50">
+            <Switch 
+              checked={receiveEnabled} 
+              onCheckedChange={setReceiveEnabled} 
+              className="data-[state=checked]:bg-blue-500" 
+            />
+            <span className="text-sm text-gray-700">
+              {receiveEnabled ? "开启收款" : "暂停收款"}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-white px-2 py-1.5 rounded-md border border-gray-200 hover:bg-gray-50">
+            <Switch 
+              checked={paymentEnabled} 
+              onCheckedChange={setPaymentEnabled} 
+              className="data-[state=checked]:bg-blue-500" 
+            />
+            <span className="text-sm text-gray-700">
+              {paymentEnabled ? "开启付款" : "暂停付款"}
+            </span>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="bg-white text-gray-600 border-gray-200 hover:bg-gray-50 font-normal"
+            onClick={handleRefresh}
+          >
+            <RotateCcw className={cn("mr-1.5 h-4 w-4", isRefreshing && "animate-spin")} />
+            刷新
+          </Button>
+        </div>
+      </div>
+      
+      {/* 统计卡片 */}
+      <div className="otc-data-grid mb-6">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-gray-700 text-sm mb-2 rounded-lg bg-gray-50 p-2">待处理收款订单</div>
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold text-gray-900 otc-data-value">{receivingOrdersCount}</span>
+            <ArrowDown className="h-5 w-5 text-green-500" />
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-gray-700 text-sm mb-2 rounded-lg bg-gray-50 p-2">待处理付款订单</div>
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold text-gray-900 otc-data-value">{sendingOrdersCount}</span>
+            <ArrowUp className="h-5 w-5 text-red-500" />
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-gray-700 text-sm mb-2 rounded-lg bg-gray-50 p-2">超时订单</div>
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold text-gray-900 otc-data-value">{expiredOrdersCount}</span>
+            <Clock className="h-5 w-5 text-yellow-500" />
+          </div>
+        </div>
+        
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-gray-700 text-sm mb-2 rounded-lg bg-gray-50 p-2">今日订单总量</div>
+          <div className="flex items-center justify-between">
+            <span className="text-3xl font-bold text-gray-900 otc-data-value">{orders.length}</span>
+            <svg className="h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      {/* 筛选区域 */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            {/* 使用Tabs替换下拉类型选择 */}
+            <Tabs 
+              value={searchType} 
+              onValueChange={setSearchType}
+              className="w-full tab-container"
+            >
+              <TabsList className="bg-[#f5f7fa] rounded-md grid grid-cols-3 py-0.5 px-1">
+                <TabsTrigger
+                  value="otc"
+                  className="tab-trigger data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md"
+                >
+                  OTC订单号
+                </TabsTrigger>
+                <TabsTrigger
+                  value="payment"
+                  className="tab-trigger data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md"
+                >
+                  支付系统订单号
+                </TabsTrigger>
+                <TabsTrigger
+                  value="user"
+                  className="tab-trigger data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md"
+                >
+                  用户回传标识
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <div>
+            <div className="relative h-[37px]">
+              <Input
+                placeholder={`请输入${searchType === 'otc' ? 'OTC订单号' : searchType === 'payment' ? '支付系统订单号' : '用户回传标识'}`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10 border-gray-200 bg-white rounded-lg h-full"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full"
+              >
+                <Search className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 币种筛选 */}
+        <Tabs value={currencyFilter} onValueChange={setCurrencyFilter} className="w-full mt-2">
+          <div className="tab-container w-full">
+            <TabsList className="bg-[#f5f7fa] rounded-md w-full grid grid-cols-5 gap-1 py-0.5 px-1">
+              <TabsTrigger 
+                value="ALL" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                All
+              </TabsTrigger>
+              <TabsTrigger 
+                value="CNY" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                CNY
+              </TabsTrigger>
+              <TabsTrigger 
+                value="INR" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                INR
+              </TabsTrigger>
+              <TabsTrigger 
+                value="MMK" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                MMK
+              </TabsTrigger>
+              <TabsTrigger 
+                value="VND" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                VND
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </Tabs>
+        
+        {/* 改用与仪表盘相同风格的页签 */}
+        <Tabs defaultValue="daiyingshou" className="w-full mt-2">
+          <div className="tab-container w-full">
+            <TabsList className="bg-[#f5f7fa] rounded-md w-full grid grid-cols-4 gap-1 py-0.5 px-1">
+              <TabsTrigger 
+                value="daiyingshou" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                代收订单
+              </TabsTrigger>
+              <TabsTrigger 
+                value="daifukuan" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                代付订单
+              </TabsTrigger>
+              <TabsTrigger 
+                value="yiwancheng" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                已完成订单
+              </TabsTrigger>
+              <TabsTrigger 
+                value="yiquxiao" 
+                className="data-[state=active]:bg-white data-[state=active]:text-[#3b82f6] text-gray-500 rounded-t-md text-xs sm:text-sm py-1 h-8 transition-all focus:outline-none"
+              >
+                已取消订单
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* TabsContent 部分 */}
+          <TabsContent value="daiyingshou" className="mt-4 px-0">
+            {/* 表格式订单列表 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[#f5f7fa] text-gray-600 text-sm">
+                    <th className="px-4 py-3 font-medium">订单号</th>
+                    <th className="px-4 py-3 font-medium">金额</th>
+                    <th className="px-4 py-3 font-medium">支付方式</th>
+                    <th className="px-4 py-3 font-medium">客户</th>
+                    <th className="px-4 py-3 font-medium">唯一标识</th>
+                    <th className="px-4 py-3 font-medium">手续费</th>
+                    <th className="px-4 py-3 font-medium">交易时间</th>
+                    <th className="px-4 py-3 font-medium">团队</th>
+                    <th className="px-4 py-3 font-medium text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders
+                    .filter(order => order.type === "addBalance" && order.status === "待处理")
+                    .map((order, index) => (
+                    <tr key={order.id} className={`border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <CircleDollarSign className="h-4 w-4 mr-1.5 text-green-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-900">{order.id}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-900">{order.amount} {order.currency}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <CreditCard className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.payment_method}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <User className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.client}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.uniqueCode}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.agentFee}%</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.date}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.businessAgent}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button variant="secondary" size="sm" className="bg-black text-white hover:bg-gray-800 text-xs">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          查看
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* 当没有订单时显示空状态 */}
+              {filteredOrders.filter(order => order.type === "addBalance" && order.status === "待处理").length === 0 && (
+                <div className="bg-white p-12 text-center rounded-lg border border-gray-200">
+                  <Ban className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">暂无待处理的收款订单</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="daifukuan" className="mt-4 px-0">
+            {/* 表格式订单列表 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[#f5f7fa] text-gray-600 text-sm">
+                    <th className="px-4 py-3 font-medium">订单号</th>
+                    <th className="px-4 py-3 font-medium">金额</th>
+                    <th className="px-4 py-3 font-medium">支付方式</th>
+                    <th className="px-4 py-3 font-medium">客户</th>
+                    <th className="px-4 py-3 font-medium">唯一标识</th>
+                    <th className="px-4 py-3 font-medium">手续费</th>
+                    <th className="px-4 py-3 font-medium">交易时间</th>
+                    <th className="px-4 py-3 font-medium">团队</th>
+                    <th className="px-4 py-3 font-medium text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders
+                    .filter(order => order.type === "withdraw" && order.status === "待处理")
+                    .map((order, index) => (
+                    <tr key={order.id} className={`border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <CircleDollarSign className="h-4 w-4 mr-1.5 text-red-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-900">{order.id}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-900">{order.amount} {order.currency}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <CreditCard className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.payment_method}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <User className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.client}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.uniqueCode}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.agentFee}%</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.date}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.businessAgent}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button variant="secondary" size="sm" className="bg-black text-white hover:bg-gray-800 text-xs">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          查看
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* 当没有订单时显示空状态 */}
+              {filteredOrders.filter(order => order.type === "withdraw" && order.status === "待处理").length === 0 && (
+                <div className="bg-white p-12 text-center rounded-lg border border-gray-200">
+                  <Ban className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">暂无待处理的付款订单</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="yiwancheng" className="mt-4 px-0">
+            {/* 表格式订单列表 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[#f5f7fa] text-gray-600 text-sm">
+                    <th className="px-4 py-3 font-medium">订单号</th>
+                    <th className="px-4 py-3 font-medium">金额</th>
+                    <th className="px-4 py-3 font-medium">支付方式</th>
+                    <th className="px-4 py-3 font-medium">客户</th>
+                    <th className="px-4 py-3 font-medium">唯一标识</th>
+                    <th className="px-4 py-3 font-medium">手续费</th>
+                    <th className="px-4 py-3 font-medium">交易时间</th>
+                    <th className="px-4 py-3 font-medium">团队</th>
+                    <th className="px-4 py-3 font-medium text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders
+                    .filter(order => order.status === "已完成")
+                    .map((order, index) => (
+                    <tr key={order.id} className={`border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <CircleDollarSign className="h-4 w-4 mr-1.5 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-900">{order.id}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-900">{order.amount} {order.currency}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <CreditCard className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.payment_method}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <User className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.client}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.uniqueCode}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.agentFee}%</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.date}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.businessAgent}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button variant="secondary" size="sm" className="bg-black text-white hover:bg-gray-800 text-xs">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          查看
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* 当没有订单时显示空状态 */}
+              {filteredOrders.filter(order => order.status === "已完成").length === 0 && (
+                <div className="bg-white p-12 text-center rounded-lg border border-gray-200">
+                  <Ban className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">暂无已完成订单</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="yiquxiao" className="mt-4 px-0">
+            {/* 表格式订单列表 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="bg-[#f5f7fa] text-gray-600 text-sm">
+                    <th className="px-4 py-3 font-medium">订单号</th>
+                    <th className="px-4 py-3 font-medium">金额</th>
+                    <th className="px-4 py-3 font-medium">支付方式</th>
+                    <th className="px-4 py-3 font-medium">客户</th>
+                    <th className="px-4 py-3 font-medium">唯一标识</th>
+                    <th className="px-4 py-3 font-medium">手续费</th>
+                    <th className="px-4 py-3 font-medium">交易时间</th>
+                    <th className="px-4 py-3 font-medium">团队</th>
+                    <th className="px-4 py-3 font-medium text-center">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders
+                    .filter(order => order.status === "已取消")
+                    .map((order, index) => (
+                    <tr key={order.id} className={`border-t border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center">
+                          <CircleDollarSign className="h-4 w-4 mr-1.5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium text-gray-900">{order.id}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-gray-900">{order.amount} {order.currency}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <CreditCard className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.payment_method}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <User className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.client}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.uniqueCode}</td>
+                      <td className="px-4 py-3 text-gray-700">{order.agentFee}%</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-blue-500 flex-shrink-0" />
+                          {order.date}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{order.businessAgent}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button variant="secondary" size="sm" className="bg-black text-white hover:bg-gray-800 text-xs">
+                          <Eye className="h-3.5 w-3.5 mr-1" />
+                          查看
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* 当没有订单时显示空状态 */}
+              {filteredOrders.filter(order => order.status === "已取消").length === 0 && (
+                <div className="bg-white p-12 text-center rounded-lg border border-gray-200">
+                  <Ban className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500">暂无已取消订单</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* 订单详情对话框 */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>详情</span>
+              <Button variant="ghost" size="icon" onClick={() => setDetailsOpen(false)} className="h-8 w-8 absolute right-2 top-2">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-4">
+              {/* 币种 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">币种</div>
+                <div className="text-gray-900">{selectedOrder.currency}</div>
+              </div>
+              
+              {/* 账户类型 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">账户类型</div>
+                <div className="text-gray-900">-</div>
+              </div>
+              
+              {/* 业务类型 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">业务类型</div>
+                <div className="text-gray-900">{selectedOrder.type}</div>
+              </div>
+              
+              {/* 用户姓名 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">用户姓名</div>
+                <div className="text-gray-900">{selectedOrder.client}</div>
+              </div>
+              
+              {/* 用户收款账号 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">用户收款账号</div>
+                <div className="text-gray-900">{selectedOrder.uniqueCode}</div>
+              </div>
+              
+              {/* 订单金额 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">订单金额</div>
+                <div className="text-gray-900 font-bold">{selectedOrder.amount.toLocaleString()}</div>
+              </div>
+              
+              {/* 唯一标识 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">唯一标识</div>
+                <div className="text-gray-900">-</div>
+              </div>
+              
+              {/* 当前状态 */}
+              <div className="bg-gray-50 px-4 py-3 rounded-md">
+                <div className="text-gray-700 text-sm mb-1">当前状态</div>
+                <div className="text-gray-900">
+                  <Badge variant={
+                    selectedOrder.status === "待处理" ? "outline" : 
+                    selectedOrder.status === "处理中" ? "secondary" :
+                    selectedOrder.status === "已完成" ? "default" : "destructive"
+                  }>
+                    {selectedOrder.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

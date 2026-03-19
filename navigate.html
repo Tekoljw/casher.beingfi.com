@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>导航到结算管理页面</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f7fa;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #1e2834;
+            margin-bottom: 24px;
+        }
+        .button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 8px;
+        }
+        .button:hover {
+            background-color: #2563eb;
+        }
+        .button.outline {
+            background-color: white;
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+        .button.outline:hover {
+            background-color: #f5f7fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>导航到结算管理页面</h1>
+        <p>点击下面的按钮导航到不同的页面：</p>
+        <div>
+            <a href="/settlement" class="button">结算管理页面</a>
+            <a href="/otc-dashboard" class="button outline">OTC仪表盘</a>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 自动跳转到OTC仪表盘
+            window.location.href = "/otc-dashboard";
+        });
+    </script>
+</body>
+</html>

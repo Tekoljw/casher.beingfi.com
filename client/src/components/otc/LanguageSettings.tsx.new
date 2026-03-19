@@ -1,0 +1,409 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Languages, Plus, Search, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { useLanguage } from "@/hooks/use-language";
+import { useToast } from "@/hooks/use-toast";
+import AddLanguageDialog from "./AddLanguageDialog";
+import EditLanguageDialog from "./EditLanguageDialog";
+import DeleteLanguageDialog from "./DeleteLanguageDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+// 翻译项目的类型
+interface TranslationItem {
+  key: string;
+  chinese: string;
+  english: string;
+  enabled: boolean;
+}
+
+// 语言类型
+interface Language {
+  code: string;
+  name: string;
+}
+
+export function LanguageSettings() {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentLanguage, setCurrentLanguage] = useState("EN");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
+  
+  const [languages, setLanguages] = useState<Language[]>([
+    { code: "EN", name: "英语" },
+    { code: "CN", name: "中文" }
+  ]);
+  
+  // 示例翻译数据
+  const [translations, setTranslations] = useState<TranslationItem[]>([
+    {
+      key: "accounts.title",
+      chinese: "收款账户",
+      english: "Payment Accounts",
+      enabled: true
+    },
+    {
+      key: "accounts.add",
+      chinese: "添加账户",
+      english: "Add Account",
+      enabled: true
+    },
+    {
+      key: "accounts.bankName",
+      chinese: "银行名称",
+      english: "Bank Name",
+      enabled: true
+    },
+    {
+      key: "accounts.accountNumber",
+      chinese: "账号",
+      english: "Account Number",
+      enabled: true
+    },
+    {
+      key: "accounts.accountName",
+      chinese: "账户名",
+      english: "Account Name",
+      enabled: true
+    },
+    {
+      key: "accounts.currency",
+      chinese: "币种",
+      english: "Currency",
+      enabled: true
+    },
+    {
+      key: "accounts.type",
+      chinese: "账户类型",
+      english: "Account Type",
+      enabled: true
+    }
+  ]);
+  
+  // 处理添加新语言
+  const handleAddLanguage = () => {
+    setIsAddDialogOpen(true);
+  };
+  
+  // 处理编辑语言
+  const handleEditLanguage = (language: Language) => {
+    setSelectedLanguage(language);
+    setIsEditDialogOpen(true);
+  };
+  
+  // 处理删除语言
+  const handleDeleteLanguage = (language: Language) => {
+    setSelectedLanguage(language);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // 处理添加新语言提交
+  const handleAddLanguageSubmit = (code: string, name: string) => {
+    // 检查是否已存在
+    if (languages.some(lang => lang.code === code)) {
+      toast({
+        title: t('language.error.exists', '语言已存在'),
+        description: t('language.error.existsDescription', `语言代码 ${code} 已存在`),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // 添加新语言
+    setLanguages([...languages, { code, name }]);
+    
+    toast({
+      title: t('language.success.added', '添加成功'),
+      description: t('language.success.addedDescription', `语言 ${name} (${code}) 已成功添加`),
+    });
+  };
+  
+  // 处理编辑语言提交
+  const handleEditLanguageSubmit = (oldCode: string, newCode: string, newName: string) => {
+    // 检查修改后的代码是否与其他语言冲突
+    if (oldCode !== newCode && languages.some(lang => lang.code === newCode)) {
+      toast({
+        title: t('language.error.exists', '语言已存在'),
+        description: t('language.error.existsDescription', `语言代码 ${newCode} 已存在`),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // 更新语言
+    setLanguages(languages.map(lang => 
+      lang.code === oldCode ? { code: newCode, name: newName } : lang
+    ));
+    
+    // 如果当前选中的语言被修改，需要更新当前选中的语言
+    if (currentLanguage === oldCode) {
+      setCurrentLanguage(newCode);
+    }
+    
+    toast({
+      title: t('language.success.updated', '更新成功'),
+      description: t('language.success.languageUpdated', `语言 ${newName} (${newCode}) 已成功更新`),
+    });
+  };
+  
+  // 处理删除语言提交
+  const handleDeleteLanguageSubmit = () => {
+    if (!selectedLanguage) return;
+    
+    // 判断是否为最后一个语言
+    if (languages.length <= 1) {
+      toast({
+        title: t('language.error.lastLanguage', '无法删除'),
+        description: t('language.error.lastLanguageDescription', '必须保留至少一种语言'),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // 删除语言
+    const filteredLanguages = languages.filter(lang => lang.code !== selectedLanguage.code);
+    setLanguages(filteredLanguages);
+    
+    // 如果当前选中的语言被删除，需要更新当前选中的语言
+    if (currentLanguage === selectedLanguage.code) {
+      setCurrentLanguage(filteredLanguages[0].code);
+    }
+    
+    toast({
+      title: t('language.success.deleted', '删除成功'),
+      description: t('language.success.languageDeleted', `语言 ${selectedLanguage.name} (${selectedLanguage.code}) 已成功删除`),
+    });
+  };
+  
+  // 处理启用/禁用翻译
+  const handleToggleTranslation = (index: number) => {
+    const updatedTranslations = [...translations];
+    updatedTranslations[index].enabled = !updatedTranslations[index].enabled;
+    setTranslations(updatedTranslations);
+  };
+  
+  // 处理更新翻译按钮点击
+  const handleUpdateTranslation = () => {
+    toast({
+      title: t('language.success.updated', '更新成功'),
+      description: t('language.success.updatedDescription', '翻译已成功更新'),
+    });
+  };
+  
+  // 渲染语言按钮
+  const renderLanguageButton = (lang: Language) => {
+    if (lang.code === "CN") {
+      // 基础语言不显示操作菜单
+      return (
+        <Button
+          key={lang.code}
+          variant="ghost"
+          className={`${currentLanguage === lang.code 
+            ? "bg-blue-700 text-white" 
+            : "text-white hover:bg-blue-800"} rounded-sm text-sm flex-shrink-0`}
+          onClick={() => setCurrentLanguage(lang.code)}
+        >
+          {lang.code}
+        </Button>
+      );
+    }
+    
+    return (
+      <div key={lang.code} className="flex items-center">
+        <Button
+          variant="ghost"
+          className={`${currentLanguage === lang.code 
+            ? "bg-blue-700 text-white" 
+            : "text-white hover:bg-blue-800"} rounded-sm text-sm flex-shrink-0`}
+          onClick={() => setCurrentLanguage(lang.code)}
+        >
+          {lang.code}
+        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              className="h-8 w-8 p-0 text-white hover:bg-blue-800"
+              aria-label={t('common.more', '更多选项')}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-white text-gray-900">
+            <DropdownMenuItem 
+              className="cursor-pointer flex items-center"
+              onClick={() => handleEditLanguage(lang)}
+            >
+              <Pencil className="mr-2 h-4 w-4" /> 
+              {t('common.edit', '编辑')}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer flex items-center text-red-600 hover:text-red-700"
+              onClick={() => handleDeleteLanguage(lang)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> 
+              {t('common.delete', '删除')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  };
+  
+  // 过滤翻译项目
+  const filteredTranslations = translations.filter(item => 
+    item.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.chinese.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.english.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  return (
+    <div className="bg-white rounded-lg shadow">
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center mb-4 sm:mb-6">
+          <Languages className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t('otc.nav.language', '多语言配置')}</h1>
+        </div>
+        
+        {/* 搜索和添加区域 - 移动端优化 */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
+          <div className="relative flex-grow max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder={t('language.search', '搜索关键词')}
+              className="pl-10 bg-white border-gray-300 w-full"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button 
+            variant="outline"
+            className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50 flex items-center justify-center"
+            onClick={handleAddLanguage}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {t('language.add', '添加语言')}
+          </Button>
+        </div>
+        
+        {/* 语言选择切换 - 深蓝色背景、白色文字样式 */}
+        <div className="mb-4 overflow-x-auto">
+          <div className="bg-blue-900 rounded-md p-1 flex">
+            {languages.map(lang => renderLanguageButton(lang))}
+          </div>
+        </div>
+        
+        {/* 翻译内容区域 - 响应式布局 */}
+        <div className="border border-gray-200 rounded-lg mb-6 overflow-hidden">
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+            <div className="text-gray-900 font-medium">
+              {t('language.chineseTo', '中文')} - {currentLanguage} {t('language.updateTranslation', '更新翻译')}
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:space-x-4 w-full sm:w-auto">
+              <div className="flex items-center space-x-2 mb-2 sm:mb-0">
+                <span className="text-sm text-gray-600">{t('language.enabled', '已启用')}</span>
+                <Switch checked={true} />
+              </div>
+              <Button 
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50 w-full sm:w-auto"
+                onClick={handleUpdateTranslation}
+              >
+                {t('language.update', '更新翻译')}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="max-h-[600px] overflow-y-auto">
+            {filteredTranslations.length > 0 ? (
+              filteredTranslations.map((item, index) => (
+                <div key={item.key} className="border-b border-gray-200 last:border-b-0">
+                  <div className="p-2 bg-gray-50 border-b border-gray-200">
+                    <span className="text-sm text-gray-600">{item.key}</span>
+                    <span className="ml-2 text-xs text-gray-500">{currentLanguage}</span>
+                  </div>
+                  <div className="flex flex-col md:flex-row">
+                    <div className="p-2 md:w-1/2 border-b md:border-b-0 md:border-r border-gray-200">
+                      <Input
+                        value={item.chinese}
+                        className="bg-white border-gray-300 text-gray-900"
+                        readOnly
+                        aria-label={t('language.sourceText', '源文本')}
+                      />
+                    </div>
+                    <div className="p-2 md:w-1/2">
+                      <Input
+                        value={item.english}
+                        className="bg-white border-gray-300 text-gray-900"
+                        onChange={(e) => {
+                          const updatedTranslations = [...translations];
+                          updatedTranslations[index].english = e.target.value;
+                          setTranslations(updatedTranslations);
+                        }}
+                        aria-label={t('language.translatedText', '翻译文本')}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                {t('language.noResults', '没有找到匹配的翻译')}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* 底部按钮 - 移动端优化 */}
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleUpdateTranslation}
+            className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+          >
+            {t('language.saveAll', '保存所有更改')}
+          </Button>
+        </div>
+      </div>
+      
+      {/* 添加语言对话框 */}
+      <AddLanguageDialog
+        isOpen={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onAdd={handleAddLanguageSubmit}
+      />
+      
+      {/* 编辑语言对话框 */}
+      {selectedLanguage && (
+        <EditLanguageDialog
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onEdit={handleEditLanguageSubmit}
+          languageCode={selectedLanguage.code}
+          languageName={selectedLanguage.name}
+        />
+      )}
+      
+      {/* 删除语言对话框 */}
+      {selectedLanguage && (
+        <DeleteLanguageDialog
+          isOpen={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onDelete={handleDeleteLanguageSubmit}
+          languageCode={selectedLanguage.code}
+          languageName={selectedLanguage.name}
+        />
+      )}
+    </div>
+  );
+}
